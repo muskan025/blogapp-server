@@ -6,4 +6,4 @@ mongoose
   .then(() => {
     console.log(clc.blueBright("Mongodb connected"));
   })
-  .catch((err) => console.log(clc.redBright(err)));
+  .catch((err) => console.log(clc.redBright(err))); 

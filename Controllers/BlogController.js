@@ -8,19 +8,20 @@ const BlogRouter = express.Router()
 
 BlogRouter.post("/create-blog",async(req,res)=>{
 
-    const {title,textBody} = req.body
+    const {title,textBody,readTime,blogImage} = req.body
     const creationDateTime = Date.now()
     const userId = req.session.user.userId
+    
 
     //to validate the blog
     try {
-        await BlogDataValidator({ title, textBody });
+        await BlogDataValidator({ title, textBody,readTime,blogImage });
       } catch (error) {
         return res.send({
           status: 400,
           message: "Data invalidate",
           error: error,
-        });
+        }); 
       }
     
 
@@ -39,10 +40,10 @@ BlogRouter.post("/create-blog",async(req,res)=>{
 //to create blog
     try{
 
-    const blogObj =await  new Blog({title,textBody,creationDateTime,userId})
+    const blogObj = await new Blog({title,textBody,creationDateTime,readTime,blogImage,userId})
     const blogDb = await blogObj.createBlog()
 
-        return res.send({
+        return res.send({  
             status:201,
             message:"Blog created successfully",
             data:blogDb
@@ -68,10 +69,12 @@ BlogRouter.get("/get-blogs",async(req,res)=>{
  
         const blogDb = await Blog.getBlogs({followingUserIds,SKIP})
 
-        return res.send({
+        
+         return res.send({ 
             status:200,
             message:"Read success",
-            data:blogDb
+            data:blogDb,
+            blogCount:blogDb.length
         })
     }
     catch(error){
@@ -169,8 +172,7 @@ try{
 
 }
 catch(error){
-    console.log(error)
-    return res.send({
+     return res.send({
         status: 500,
         message: "Database error",
         error: error,
@@ -209,4 +211,5 @@ catch(error){
 }
 }
 )
+
 module.exports = BlogRouter

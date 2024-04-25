@@ -6,13 +6,17 @@ const Blog = class {
   title;
   textBody;
   creationDateTime;
+  readTime;
+  blogImage;
   userId;
   blogId;
 
-  constructor({ title, textBody, creationDateTime, userId,blogId }) {
+  constructor({ title, textBody, creationDateTime,readTime,blogImage,userId,blogId }) {
     this.title = title;
     this.textBody = textBody;
     this.creationDateTime = creationDateTime;
+    this.readTime = readTime;
+    this.blogImage = blogImage;
     this.userId = userId;
     this.blogId = blogId
   }
@@ -26,14 +30,17 @@ const Blog = class {
         title: this.title,
         textBody: this.textBody,
         creationDateTime: this.creationDateTime,
+        readTime: this.readTime,
+        blogImage: this.blogImage,
         userId: this.userId,
       });
 
       try {
         const blogDb = await blogObj.save();
         resolve(blogDb);
-      } catch (err) {
-        reject(error);
+      } catch (err) { 
+        
+        reject(err);
       }
     });
   }
@@ -179,6 +186,9 @@ reject(error)
     }
   })
  }
+
+
+
 };
 
 

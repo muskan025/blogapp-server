@@ -10,15 +10,17 @@ const SessionSchema = require("../Schemas/SessionSchema");
 
 
 
+
 AuthRouter.post("/register",async(req,res)=>{
-const {name,username,email,password} = req.body
+const {name,username,email,password,bio,niche} = req.body
+
 
 try{
-    await cleanUpAndValidate({name,username,email,password})
+    await cleanUpAndValidate({name,username,email,password,bio,niche})
 }
 catch(error){
-    console.log(error)
-return res.send({
+    
+ return res.send({
     status:400,
     message:"Data issue",
     error:error
@@ -30,7 +32,7 @@ try{
 
     await User.findUsernameOrEmailExist({ email, username })
 
-    const userObj = new User({name,username,email,password})
+    const userObj = new User({name,username,email,password,bio,niche})
 
     const userDb = await userObj.registerUser()
 
@@ -41,6 +43,7 @@ try{
     })
 }
 catch(error){
+    console.log("reg-error",error)
     return res.send({
         status:500,
         message:"Data issue",
@@ -79,31 +82,21 @@ AuthRouter.post("/login",async(req,res)=>{
         }
     
         //session base auth
-req.session.isAuth=true
-req.session.user={
-    userId:userDb._id,
-    email:userDb.email,
-    username:userDb.username
-}
-
-// const responseData = {
-//     user:{
-//         email:userDb.email,
-//         username:userDb.username
-//     },
-//     blogs:{
-//         blog:userDb.blogs
-//     }
-// }
+        req.session.isAuth=true
+        req.session.user={
+            userId:userDb._id,
+            email:userDb.email,
+            username:userDb.username
+        }
+       
     return res.send({
-        status:200,
+        status:200, 
         message:"login successful",
     })
-
+ 
    }
    catch(error){
-    console.log(error)
-    return res.send({
+     return res.send({
         status:500,
         message:"Database issue",
         error:error
@@ -134,6 +127,9 @@ AuthRouter.post("/logout",async(req,res)=>{
 
 })
 
+ 
+
+  
 // AuthRouter.post("/logout_from_all_devices",async(req,res)=>{
 // const username = req.session.user.username
 
@@ -156,5 +152,6 @@ AuthRouter.post("/logout",async(req,res)=>{
 // }
 
 // })
+
 
 module.exports = AuthRouter

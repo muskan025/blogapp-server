@@ -11,11 +11,19 @@ const blogSchema = new Schema({
     textBody:{
         type:String,
         require:true,
-        minLength:2,
+        minLength:30,
         maxLength:1000
     },
     creationDateTime:{
         type:String,
+        require:true,
+    },
+    readTime:{
+        type:String,
+        require:true,
+    },
+    blogImage:{
+        type: Buffer,
         require:true,
     },
     userId:{

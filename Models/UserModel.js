@@ -6,12 +6,16 @@ const User = class {
   name;
   email;
   password;
+  bio;
+  niche;
 
-  constructor({ name, username, email, password }) {
+  constructor({ name, username, email, password,bio,niche }) {
     this.name = name;
     this.username = username;
     this.email = email;
     this.password = password;
+    this.bio = bio;
+    this.niche = niche;
   }
 
   registerUser() {
@@ -26,6 +30,8 @@ const User = class {
         username: this.username,
         email: this.email,
         password: hashedPassword,
+        bio:this.bio,
+        niche:this.niche,
       });
 
       try {
@@ -94,6 +100,8 @@ reject(error)
       }
     })
   }
+
+ 
 
 };
 

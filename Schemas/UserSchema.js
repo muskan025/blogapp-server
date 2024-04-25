@@ -20,6 +20,14 @@ const userSchema = new Schema({
         type:String,
         require:true
     },
+    bio:{
+        type:String,
+        required:true
+    },
+    niche:{
+        type:String,
+        required:true
+    },
     blog:{
         type:Schema.Types.ObjectId,
         ref:"blog",
@@ -28,3 +36,7 @@ const userSchema = new Schema({
 })
 
 module.exports = mongoose.model("user",userSchema)
+
+
+
+  

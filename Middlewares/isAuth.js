@@ -9,7 +9,7 @@ else{
         message: "Session expired, please login again",
     })
 }
-
+ 
 }
 
 module.exports = isAuth
