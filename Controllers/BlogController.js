@@ -1,26 +1,31 @@
 const express = require("express")
 const Blog = require("../Models/BlogModel")
 const User = require("../Models/UserModel")
+const sanitizeHtml = require('sanitize-html')
 const { BlogDataValidator } = require("../Utils/BlogUtils")
 const { following } = require("../Models/FollowModel")
+const BlogSchema = require("../Schemas/BlogSchema")
+const isAuth = require("../Middlewares/isAuth")
 
 const BlogRouter = express.Router()
 
-BlogRouter.post("/create-blog",async(req,res)=>{
+// Blog.deleteBlogs()
 
-    const {title,textBody,readTime,blogImage} = req.body
+BlogRouter.post("/create-blog",isAuth,async(req,res)=>{
+
+    const {title,textBody,readTime,thumbnail} = req.body
+    
     const creationDateTime = Date.now()
     const userId = req.session.user.userId
-    
-
+     
     //to validate the blog
     try {
-        await BlogDataValidator({ title, textBody,readTime,blogImage });
+        await BlogDataValidator({ title, textBody,readTime,thumbnail });
       } catch (error) {
         return res.send({
-          status: 400,
-          message: "Data invalidate",
-          error: error,
+          status: 400, 
+          message: error,
+          error: "Data invalidate",
         }); 
       }
     
@@ -28,9 +33,10 @@ BlogRouter.post("/create-blog",async(req,res)=>{
     //to verify if the correct user is creating the blogs
     try{
         const userDb = await User.verifyUserId({userId})
-   
+        console.log(userDb)
     }
     catch(error){
+        console.log(error)
         return res.send({
         status:400,
         error:error
@@ -40,19 +46,28 @@ BlogRouter.post("/create-blog",async(req,res)=>{
 //to create blog
     try{
 
-    const blogObj = await new Blog({title,textBody,creationDateTime,readTime,blogImage,userId})
-    const blogDb = await blogObj.createBlog()
+    const blogObj = new Blog({title,textBody,creationDateTime,readTime,thumbnail,userId})
+     const blogDb = await blogObj.createBlog()
 
         return res.send({  
             status:201,
             message:"Blog created successfully",
-            data:blogDb
+            data:{
+                id:blogDb._id,
+                title:blogDb.title,
+                textBody:blogDb.textBody,
+                readTime:blogDb.readTime,
+                thumbnail:blogDb.thumbnail,
+                notes:blogDb.notes,
+                likesCount:blogDb.likesCount
+            }
         })
     }
     catch(error){
+        console.log("create blog:",error)
         return res.send({
             status:500,
-            message:"Database error",
+            message:"Something went wrong, please try again", 
             error:error
         })
     }
@@ -61,19 +76,27 @@ BlogRouter.post("/create-blog",async(req,res)=>{
 BlogRouter.get("/get-blogs",async(req,res)=>{
 
     const SKIP = parseInt(req.query.skip) || 0
-    const followerUserId = req.session.user.userId
+    const isLoggedin = req.session.user !== undefined
+    console.log("isLoggedin:",isLoggedin)
+    const followerUserId = isLoggedin && req.session.user.userId
+ 
     try{
+
+        let blogDb = []
+        if(isLoggedin){
         const followingUserDetails = await following({followerUserId,SKIP:0})
-     
+      
         const followingUserIds = followingUserDetails.map(user=>(user._id))
  
-        const blogDb = await Blog.getBlogs({followingUserIds,SKIP})
-
-        
-         return res.send({ 
+          blogDb = await Blog.getBlogs({followingUserIds,isLoggedin,SKIP})
+        }
+        else{
+          blogDb = await Blog.getBlogs({isLoggedin,SKIP})
+        }
+          return res.send({ 
             status:200,
             message:"Read success",
-            data:blogDb,
+            data: blogDb,
             blogCount:blogDb.length
         })
     }
@@ -81,28 +104,27 @@ BlogRouter.get("/get-blogs",async(req,res)=>{
         console.log(error)
         return res.send({
             status:500,
-            message:"Database error",
-            error:error 
-        })
+            message:error,
+         })
     }
-
-
 
 })
 
-BlogRouter.get("/my-blogs",async(req,res)=>{
+BlogRouter.get("/my-blogs",isAuth,async(req,res)=>{
 
     const userId = req.session.user.userId
     const SKIP = parseInt(req.query.skip) || 0
 
     try{
 
-        const myBlogDb = await Blog.myBlogs({SKIP,userId})
-         return res.send({
+        const blogDb = await Blog.myBlogs({SKIP,userId})
+          return res.send({
             status:200,
             message:"Read success",
-            data:myBlogDb 
-        })
+            data:blogDb, 
+        }) 
+
+
     }
     catch(error){
         console.log(error)
@@ -115,26 +137,25 @@ BlogRouter.get("/my-blogs",async(req,res)=>{
 
 })
 
-BlogRouter.put("/edit-blog",async(req,res)=>{
+BlogRouter.put("/edit-blog/:blogId",isAuth,async(req,res)=>{
 
-    const {title,textBody} = req.body.data
-    const blogId = req.body.blogId
+    const {title,textBody,readTime,thumbnail} = req.body
+    const blogId = req.params.blogId
     const userId = req.session.user.userId
  
    //to validate the blog
    try {
-    await BlogDataValidator({ title, textBody });
+    await BlogDataValidator({ title, textBody,readTime,thumbnail }); 
   } catch (error) {
-    console.log(error)
-    return res.send({
+    console.log(error)  
+    return res.send({  
       status: 400,
-      message: "Data invalidate",
-      error: error,
+      message: error,
+       
     });
-  }
+  }  
   
 try{
-    
   const blogDb = await Blog.getBlogWithId({blogId})
  
   if(blogDb.userId.toString() !== userId.toString())
@@ -143,22 +164,21 @@ try{
         status: 401,
           message: "UnAuthorized to edit",
       })
-  }
-
+  }  
   //Don't allow user to edit after 30 mins
  const timeDiff = new Date( (String(Date.now()) - blogDb.creationDateTime)).getTime()/(1000*60)
 
  console.log(timeDiff)
   if(timeDiff > 30){
 
-      return res.send({
+      return res.send({ 
         status: 400,
           message: "Not allowed to edit after 30 mins",
       })
   }
 
   const blogObj = new Blog({
-    title,textBody,userId,creationDateTime:blogDb.creationDateTime,blogId
+    title,textBody,userId,readTime,creationDateTime:blogDb.creationDateTime,blogId,thumbnail
   })
 
   const oldBlogDb = await blogObj.updateBlog({blogId})
@@ -168,10 +188,8 @@ try{
       message: "Blog edited successfully",
       data:oldBlogDb
   })
-
-
 }
-catch(error){
+catch(error){ 
      return res.send({
         status: 500,
         message: "Database error",
@@ -180,12 +198,52 @@ catch(error){
 }
 })
 
-BlogRouter.delete("/delete-blog",async(req,res)=>{
+BlogRouter.post("/like-blog",isAuth,async(req,res)=>{
 
     const blogId = req.body.blogId
+     
+    const userId = req.session.user.userId
+
+    try{
+        await User.verifyUserId({userId})
+    }
+    catch(error){
+        console.log(error)
+        return res.send({
+        status:400,
+        message:error
+        })
+    }
+
+    try {
+        const blog = await Blog.getBlogWithId({blogId})
+
+        console.log("blog:",blog)
+        const likedBlog = await Blog.toggleLike({userId,blog})
+        
+        return res.send({ 
+            status:200, 
+            message:likedBlog[1],
+            data:likedBlog[0]
+        })
+        
+    } catch (error) {
+        console.log(error)
+        return res.send({
+            status:500,
+             message:"Something went wrong",
+             error:error
+        })
+    }
+    
+
+})
+
+BlogRouter.delete("/delete-blog/:blogId",isAuth,async(req,res)=>{
+
+    const blogId = req.params.blogId
     const userId = req.session.user.userId
 try{
-    
     const blogDb = await Blog.getBlogWithId({blogId})
 
     if(!blogDb.userId.equals(userId)){
@@ -193,8 +251,7 @@ try{
             status:401,
             message:"Unauthorized to delete the blog"
         })
-    }
-
+    }  
     const deletedBlog = await Blog.deleteBlog({blogId})
     return res.send({
             status:200,
@@ -205,11 +262,13 @@ try{
 catch(error){
     return res.send({
         status:500,
-        message:"Database error",
+        message:"Something went wrong, please try again",
         error:error
     })
 }
 }
+
+
 )
 
 module.exports = BlogRouter

@@ -1,1 +1,1 @@
-module.exports = Object.freeze({LIMIT:5,})
+module.exports = Object.freeze({LIMIT:10,})

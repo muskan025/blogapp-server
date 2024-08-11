@@ -6,18 +6,14 @@ const fileSchema = new Schema({
         type: String,
         required: true,
       },
-      mimetype: {
+      contentType: {
         type: String,
         required: true,
       },
-      size: {
-        type: Number,
+      data: {
+        type: Buffer,
         required: true,
-      },
-      path: {
-        type: String,
-        required: true,
-      },
+      }
 })
 
 module.exports = mongoose.model("file",fileSchema)

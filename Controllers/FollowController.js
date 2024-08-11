@@ -1,9 +1,9 @@
 const express = require("express")
 const {follow, following, followers, unfollow} = require("../Models/FollowModel")
 const User = require("../Models/UserModel")
+
+
 const FollowRouter = express.Router()
-
-
 FollowRouter.post("/follow",async(req,res)=>{
 
     const followingUserId = req.body.followingUserId
@@ -42,8 +42,7 @@ try{
 
 }
 catch(error){
-    console.log(error)
-     return res.send({
+      return res.send({
         status:500,
         message:"Database error",
         error:error

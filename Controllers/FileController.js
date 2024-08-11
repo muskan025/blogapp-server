@@ -1,33 +1,52 @@
+ 
 const express = require("express");
-const uploadMiddleware = require("../Middlewares/uploadMiddleware");
+const path = require("path");
+const fs = require("fs");
+const isAuth = require("../Middlewares/isAuth");
+const FileRouter = express.Router();
 
+FileRouter.post("/file",isAuth, async (req, res) => {
 
-const FileRouter = express.Router()
+  const uid = req.session.user.userId
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send({
+      status: 400,
+      message: "No files were uploaded."
+    });
+  }
 
-FileRouter.get("/upload", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
-  });
+  const file = req.files.file;
 
-FileRouter.post("/upload",uploadMiddleware, async(req, res) => {
+  if (!/^image/.test(file.mimetype)) {
+    return res.status(400).send({
+      status: 400,
+      message: "Not an image, please upload an image"
+    });
+  }
 
-    try{
+  try {
 
-        const file = res.files.file
+    const fileName = `${uid}${Date.now()}${path.extname(file.name)}`;
+    const uploadPath = path.join(__dirname, '../upload', fileName);
+    await file.mv(uploadPath);
 
-        const newFile={
-            filename:file.name,
-            mimetype:file.mimetype,
-            size:file.size,
-            path:"/uploads/"+file.name
-        }
+    const fileURL = `upload/${fileName}`  
+    
+    return res.status(200).send({
+      status: 200,
+      message: "File uploaded successfully", 
+      url: fileURL
+    });
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    return res.status(500).send({
+      status: 500, 
+      message: "Error uploading file",
+      error: error.message
+    });
+  }
+});
 
-        const savedFile = await newFile.save()
+module.exports = FileRouter;
 
-      return res.send("File uploaded succesfully")
-    }
-    catch(error){
-      return res.send(error)
-    }
-  });
-
-module.exports = FileRouter
+ 

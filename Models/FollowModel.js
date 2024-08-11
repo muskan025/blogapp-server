@@ -20,14 +20,9 @@ const follow = async ({followingUserId,followerUserId})=>{
 
             //check if user you're trying to follow exists
             if(!ObjectId.isValid(followingUserId)) return reject("User you're trying to follow doesn't exist")
-
             
             //Check if user is following himself
-           console.log(followingUserId.toString(),followerUserId.toString())
-            if(followingUserId.toString() ===  followerUserId.toString()) {
-                 
-            return reject("You can't follow yourself")
-        }
+             if(followingUserId.toString() ===  followerUserId.toString()) return reject("You can't follow yourself")
 
             //Check if user1 already follow user2
             const followerExist = await FollowSchema.findOne({followerUserId,followingUserId})

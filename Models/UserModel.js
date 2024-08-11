@@ -1,3 +1,7 @@
+const BlogSchema = require("../Schemas/BlogSchema");
+const FollowSchema = require("../Schemas/FollowSchema");
+const SessionSchema = require("../Schemas/SessionSchema");
+const UserSchema = require("../Schemas/UserSchema");
 const userSchema = require("../Schemas/UserSchema");
 const bcrypt = require("bcrypt");
 const ObjectId = require("mongodb").ObjectId
@@ -8,14 +12,17 @@ const User = class {
   password;
   bio;
   niche;
+  profileImg;
+   
 
-  constructor({ name, username, email, password,bio,niche }) {
+  constructor({ name, username, email, password,bio,niche,profileImg }) {
     this.name = name;
     this.username = username;
     this.email = email;
     this.password = password;
     this.bio = bio;
     this.niche = niche;
+    this.profileImg = profileImg;
   }
 
   registerUser() {
@@ -32,14 +39,15 @@ const User = class {
         password: hashedPassword,
         bio:this.bio,
         niche:this.niche,
-      });
-
+        profileImg:this.profileImg
+       });
+ 
       try {
         const userDb = await userObj.save();
 
         resolve(userDb);
       } catch (error) {
-        reject(error);
+        reject(error); 
       }
     });
   }
@@ -59,14 +67,13 @@ const User = class {
         reject("Username already in use")
 
     resolve()
-
       } catch (error) {
         reject(error)
       }
     });
   }
 
-  static findRegisteredEmailOrUsername({loginId,password}){
+  static findRegisteredEmailOrUsername({loginId}){
 
     return new Promise(async(resolve,reject)=>{
       try{
@@ -74,8 +81,12 @@ const User = class {
         const userDb = await userSchema.findOne({
           $or:[{email:loginId},{username:loginId}]
         })
+        // .populate('blogs')
+        // .exec()  
 
-        if(!userDb) reject("User does not exits, please register first")
+        console.log("user blogs",userDb)
+ 
+        if(!userDb) reject("User does not exist, please register first")
        
         resolve(userDb)
       }
@@ -91,18 +102,53 @@ const User = class {
       if(!ObjectId.isValid(userId)) reject("Invalid User")
 
       try{
-        const userDb = await userSchema.findOne({_id:userId})
+       
+        const userDb = await UserSchema.findOne({_id:userId}) 
         if(!userDb) reject("No user found")
         resolve (userDb)
       }
       catch(error){
-reject(error)
+      reject(error)
       }
     })
   }
 
- 
+  static async editProfile({userId, name, username, email, password, bio, niche, profileImg}) {
+    return new Promise(async (resolve, reject) => {
+      const newProfile = {
+        name,
+        username,
+        profileImg,
+        bio,
+        niche
+      };
+      try {
+        const updatedProfile = await UserSchema.findOneAndUpdate({_id: userId}, newProfile, {new: true});
+        resolve(updatedProfile);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
 
-};
+  // static async deleteUsers() {
+
+  //   try{
+      
+  //     const deletedUsers = await FollowSchema.deleteMany({})
+
+  //     if(!deletedUsers) throw new Error ("couldn't delete")
+
+  //       return deletedUsers
+  //   }
+  //   catch (error) {
+  //     throw error;
+  //   }
+  
+  // }
+ 
+}; 
+
+
 
 module.exports = User;

@@ -4,42 +4,51 @@ const Schema = mongoose.Schema
 const blogSchema = new Schema({
     title:{
         type:String,
-        require:true,
+        required:true,
+        trim: true,
         minLength:2,
-        maxLength:50
+        maxLength:70
     },
     textBody:{
-        type:String,
-        require:true,
+        type:String, 
+        required:true,
+        trim: true,
         minLength:30,
-        maxLength:1000
-    },
-    creationDateTime:{
-        type:String,
-        require:true,
+        maxLength:10000
     },
     readTime:{
         type:String,
-        require:true,
+        required:true,
     },
-    blogImage:{
-        type: Buffer,
-        require:true,
+    thumbnail:{
+        type:String,
+        required:true,
+    }, 
+    likes:[{
+        type: Schema.Types.ObjectId,
+        ref: 'user',
+    }],
+    likesCount:{
+        type:Number,
+        default:0
+    },
+    notes:{
+        type:String,
+        trim: true,
+        default:''
     },
     userId:{
-        type:Schema.Types.ObjectId,   //foriegn key of blogSchema from userSchema
-        require:true,
+        type:Schema.Types.ObjectId,    
+        required:true,
         ref:"user"
     },
     isDeleted:{
         type:Boolean, 
-        require:true,
         default:false
     },
     deletionDateTime:{
-        type:String,    
-        require:false,
+        type:Date,    
     },
-})
+},{timestamps: true})
 
 module.exports = mongoose.model("blog",blogSchema)
