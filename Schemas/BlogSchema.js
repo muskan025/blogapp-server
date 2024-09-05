@@ -32,11 +32,17 @@ const blogSchema = new Schema({
         type:Number,
         default:0
     },
-    notes:{
-        type:String,
-        trim: true,
-        default:''
-    },
+    notes: [{
+        userId: {
+          type: Schema.Types.ObjectId,
+            default: null
+        },
+        content: {
+          type: String,
+          trim: true,
+          default: ''
+        }
+      }],
     userId:{
         type:Schema.Types.ObjectId,    
         required:true,

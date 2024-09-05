@@ -33,10 +33,8 @@ BlogRouter.post("/create-blog",isAuth,async(req,res)=>{
     //to verify if the correct user is creating the blogs
     try{
         const userDb = await User.verifyUserId({userId})
-        console.log(userDb)
     }
     catch(error){
-        console.log(error)
         return res.send({
         status:400,
         error:error
@@ -64,8 +62,7 @@ BlogRouter.post("/create-blog",isAuth,async(req,res)=>{
         })
     }
     catch(error){
-        console.log("create blog:",error)
-        return res.send({
+         return res.send({
             status:500,
             message:"Something went wrong, please try again", 
             error:error
@@ -77,7 +74,6 @@ BlogRouter.get("/get-blogs",async(req,res)=>{
 
     const SKIP = parseInt(req.query.skip) || 0
     const isLoggedin = req.session.user !== undefined
-    console.log("isLoggedin:",isLoggedin)
     const followerUserId = isLoggedin && req.session.user.userId
  
     try{
@@ -110,18 +106,18 @@ BlogRouter.get("/get-blogs",async(req,res)=>{
 
 })
 
-BlogRouter.get("/my-blogs",isAuth,async(req,res)=>{
+BlogRouter.post("/user-blogs",async(req,res)=>{
 
-    const userId = req.session.user.userId
+    const userId = req.body.userId
     const SKIP = parseInt(req.query.skip) || 0
+     try{ 
 
-    try{
+        const blogDb = await Blog.userBlogs({SKIP,userId})
 
-        const blogDb = await Blog.myBlogs({SKIP,userId})
-          return res.send({
+           return res.send({
             status:200,
             message:"Read success",
-            data:blogDb, 
+            data:blogDb,  
         }) 
 
 
@@ -145,7 +141,7 @@ BlogRouter.put("/edit-blog/:blogId",isAuth,async(req,res)=>{
  
    //to validate the blog
    try {
-    await BlogDataValidator({ title, textBody,readTime,thumbnail }); 
+     await BlogDataValidator({ title, textBody,readTime,thumbnail }); 
   } catch (error) {
     console.log(error)  
     return res.send({  
@@ -162,15 +158,13 @@ try{
   {
       return res.send({
         status: 401,
-          message: "UnAuthorized to edit",
+          message: "You're UnAuthorized to proceed",
       })
   }  
   //Don't allow user to edit after 30 mins
  const timeDiff = new Date( (String(Date.now()) - blogDb.creationDateTime)).getTime()/(1000*60)
 
- console.log(timeDiff)
-  if(timeDiff > 30){
-
+   if(timeDiff > 30){
       return res.send({ 
         status: 400,
           message: "Not allowed to edit after 30 mins",
@@ -238,6 +232,36 @@ BlogRouter.post("/like-blog",isAuth,async(req,res)=>{
     
 
 })
+
+
+BlogRouter.post('/notes/:blogId', async (req, res) => {
+    const { blogId } = req.params;
+    const { userId,content } = req.body;
+     let blog = []
+      
+    try{
+      blog = await Blog.getBlogWithId({blogId});
+    }
+    catch(error){
+      return res.send({ 
+        status:400,
+        message: error
+      });
+    }
+     try {
+      
+      const addedNote = await Blog.addNote({userId,blog,content})
+      return res.send({
+        status:200
+      })
+    } catch (error) {
+        console.log(error)
+        return res.send({
+            status:500,
+            message:"Something went wrong, please try again"
+          });
+        }
+  });
 
 BlogRouter.delete("/delete-blog/:blogId",isAuth,async(req,res)=>{
 

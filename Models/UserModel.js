@@ -13,6 +13,8 @@ const User = class {
   bio;
   niche;
   profileImg;
+  followingsCount;
+  followersCount;
    
 
   constructor({ name, username, email, password,bio,niche,profileImg }) {
@@ -23,6 +25,8 @@ const User = class {
     this.bio = bio;
     this.niche = niche;
     this.profileImg = profileImg;
+    this.followingsCount = 0,
+    this.followersCount = 0
   }
 
   registerUser() {
@@ -39,7 +43,9 @@ const User = class {
         password: hashedPassword,
         bio:this.bio,
         niche:this.niche,
-        profileImg:this.profileImg
+        profileImg:this.profileImg,
+        followingsCount:this.followingsCount,
+        followersCount:this.followersCount
        });
  
       try {
@@ -81,11 +87,7 @@ const User = class {
         const userDb = await userSchema.findOne({
           $or:[{email:loginId},{username:loginId}]
         })
-        // .populate('blogs')
-        // .exec()  
-
-        console.log("user blogs",userDb)
- 
+  
         if(!userDb) reject("User does not exist, please register first")
        
         resolve(userDb)
@@ -113,7 +115,7 @@ const User = class {
     })
   }
 
-  static async editProfile({userId, name, username, email, password, bio, niche, profileImg}) {
+  static async editProfile({userId, name, username, bio, niche, profileImg}) {
     return new Promise(async (resolve, reject) => {
       const newProfile = {
         name,
@@ -122,7 +124,7 @@ const User = class {
         bio,
         niche
       };
-      try {
+      try { 
         const updatedProfile = await UserSchema.findOneAndUpdate({_id: userId}, newProfile, {new: true});
         resolve(updatedProfile);
       } catch (error) {

@@ -38,6 +38,14 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "blog"
     }],
+    followersCount: {
+        type: Number,
+        default: 0
+    },
+    followingsCount: {
+        type: Number,
+        default: 0
+    }
 }, { timestamps: true })
 
 module.exports = mongoose.model("user", userSchema)

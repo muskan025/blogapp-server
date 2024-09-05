@@ -27,7 +27,6 @@ catch(error){
 try{
 
     await User.findUsernameOrEmailExist({ email, username })
-
     const userObj = new User({ name, username, email, password})
 
     const userDb = await userObj.registerUser()
@@ -89,16 +88,18 @@ let userDb={}
             username:userDb.username
         }
 
-    return res.send({  
+     return res.send({  
         status:200,  
         message:"login successful",
         data: {
+        userId: userDb._id,
         name: userDb.name,
         username: userDb.username,
         bio:userDb.bio,
         niche:userDb.niche,
         profileImg:userDb.profileImg,
-        blogs: userDb.blogs
+        followingsCount:userDb.followingsCount,
+        followersCount:userDb.followersCount,
         },
     })
  
@@ -114,20 +115,48 @@ let userDb={}
      
 })
 
+AuthRouter.post('/user/:userId',async(req,res)=>{
+
+    const userId = req.params.userId
+ 
+    try {
+        
+        const userDb = await User.verifyUserId({userId})
+
+        return res.send({  
+            status:200,  
+            data: {
+            userId: userDb._id,
+            name: userDb.name,
+            username: userDb.username,
+            bio:userDb.bio,
+            niche:userDb.niche,
+            profileImg:userDb.profileImg,
+            followingsCount:userDb.followingsCount,
+            followersCount:userDb.followersCount,
+            },
+        })
+    } catch (error) {
+        
+        return res.send({
+            status:500,
+            message:'Something went wrong,please try again'
+        })
+    }
+})
+
 AuthRouter.patch('/edit-profile/:username',async(req,res)=>{
   
      const userId = req.session.user.userId
 
     const {name,username,profileImg, bio, niche} = req.body
-    console.log("edit body:",req.body)
-
+ 
     const update = true
     try{
-        await cleanUpAndValidate({ name, username,update,bio,niche})
+        await cleanUpAndValidate({ name, username,update,bio,niche})  
     }
     catch(error){
-        console.log(error)
-        return res.send({
+         return res.send({
             status:400,
             message:error
         })
@@ -141,8 +170,7 @@ AuthRouter.patch('/edit-profile/:username',async(req,res)=>{
 
         const updatedProfile = await User.editProfile({userId, name, username, email, password, bio, niche, profileImg});
          
-        console.log("updated profile: ",updatedProfile)
-        return res.send({
+         return res.send({
             status:200,
             message:'Profile updated!',
             data:updatedProfile,

@@ -15,7 +15,7 @@ const follow = async ({followingUserId,followerUserId})=>{
             //        $facet:{
             //          data:[{followerUserId: new ObjectId(followerUserId)},{followingUserId: new ObjectId(followingUserId)}]
             //        }
-            //     }
+            //     } 
             // ])
 
             //check if user you're trying to follow exists
@@ -24,21 +24,30 @@ const follow = async ({followingUserId,followerUserId})=>{
             //Check if user is following himself
              if(followingUserId.toString() ===  followerUserId.toString()) return reject("You can't follow yourself")
 
-            //Check if user1 already follow user2
+            //Check if user1 already follows user2
             const followerExist = await FollowSchema.findOne({followerUserId,followingUserId})
             if(followerExist) return reject("You already follow this user")
 
-            //create follow entry
             const followObj = await FollowSchema({
                 followerUserId:followerUserId,
                 followingUserId:followingUserId,
                 creationDateTime:Date.now()
             }) 
         
-            const followDb = await followObj.save()
+           const followingsCount =  await UserSchema.findByIdAndUpdate(
+                {_id:followerUserId},
+                { $inc: { followingsCount: 1 } }
+              );
+              const followersCount = await UserSchema.findByIdAndUpdate(
+                {_id:followingUserId},
+                { $inc: { followersCount: 1 } }
+              );
 
-            resolve(followDb)
-        }
+              const data = {followingsCount, followersCount}
+              const followDb = await followObj.save()
+               
+            resolve(data)
+         }
         catch(error){
             reject(error)
         }
@@ -46,7 +55,7 @@ const follow = async ({followingUserId,followerUserId})=>{
  
 }
 
-const following = async ({followerUserId,SKIP})=>{
+const following = async ({userId,SKIP})=>{
 
     return new Promise (async(resolve,reject)=>{
 
@@ -56,7 +65,7 @@ const following = async ({followerUserId,SKIP})=>{
             //1ST METHOD 
             const followingDb = await FollowSchema.aggregate([
                 {
-                    $match:{followerUserId:new ObjectId(followerUserId)}
+                    $match:{followerUserId:new ObjectId(userId)}
                 },
                 {
                     $sort:{creationDateTime:-1}
@@ -73,20 +82,13 @@ const following = async ({followerUserId,SKIP})=>{
             const followingUserDetails = await UserSchema.aggregate([
                 {
                     $match:{ _id: { $in : followingUserIds}}
-                }
+                } 
             ])
 
-            //2nd METHOD 
-            // To exclude certain feilds in query : 
-            // second parameter should be {key : 0} , eg:{password:0,name:0}
-            
-            //  const followingDb = await FollowSchema.find({followerUserId:userId}).populate("followingUserId",{password:0,name:0}).sort({creationDateTime:-1})
-
-             
-             resolve(followingUserDetails.reverse())
+              resolve(followingUserDetails.reverse())
         }
         catch(error){
-        reject(error)
+        reject(error) 
         }
     })
 }
@@ -118,20 +120,12 @@ const followers = async ({userId,SKIP})=>{
             //fetching all follower Ids
             const followerUserIds = await followersDb[0].data.map((follower)=>follower.followerUserId)
 
-            followerUserIds.map(async(id)=>{
-                 const userDetails = await UserSchema.findOne({_id:id})
-            }
-            )
-
-            //fetching all the followers data from user collection
-            const followersUserDetails = await UserSchema.aggregate([
+             const followersUserDetails = await UserSchema.aggregate([
                 {$match:{_id: { $in : followerUserIds}}}
             ])
 
-            console.log(followersUserDetails)
-            //2nd METHOD
-            // const followersDb = await FollowSchema.find({followingUserId:userId}).populate("followerUserId",{password:0,name:0}).sort({creationDateTime:-1})
-           
+            console.log("followersUserDetails dbb:",followersUserDetails)
+
             resolve(followersUserDetails.reverse())
         }
         catch(error){
@@ -147,8 +141,18 @@ const unfollow = async ({followerUserId,followingUserId})=>{
         try{
 
             const followObj = await FollowSchema.findOneAndDelete({followingUserId,followerUserId})
+
+            const followingsCount =  await UserSchema.findByIdAndUpdate(
+                {_id:followerUserId},
+                { $inc: { followingsCount: -1 } }
+              );
+              const followersCount = await UserSchema.findByIdAndUpdate(
+                {_id:followingUserId},
+                { $inc: { followersCount: -1 } }
+              );
  
-            resolve(followObj)
+              const data={followingsCount,followersCount}
+            resolve(data)
          }
         catch(error){
             reject(error)

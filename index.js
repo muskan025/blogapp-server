@@ -54,23 +54,7 @@ app.use('/auth', AuthRouter);
 app.use('/blog', BlogRouter);
 app.use('/follow', isAuth, FollowRouter);
 app.use("/upload", express.static(path.join(__dirname, 'upload')),FileRouter);   
-  
 
-//   const { file } = req.files;
-
-//     // If no image submitted, exit
-//     if (!file) return res.sendStatus(400);
-
-//     // If doesn't have image mime type prevent from uploading
-//     if (!/^image/.test(file.mimetype)) return res.sendStatus(400);
-
-//     // Move the uploaded image to our upload folder 
-//     file.mv(__dirname + '/uploads/' + file.name);
-
-//     // All good
-//     res.sendStatus(200);
-
-// });
 app.get('/', (req, res) => {
   return res.send('Server is running!');
 }); 

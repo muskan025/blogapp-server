@@ -6,17 +6,16 @@ const User = require("../Models/UserModel")
 const FollowRouter = express.Router()
 FollowRouter.post("/follow",async(req,res)=>{
 
-    const followingUserId = req.body.followingUserId
+    const {followingUserId} = req.body
     const followerUserId = req.session.user.userId
-
-    //verify users Ids
-
+    console.log('body:',req.body)
+    
     try {
         await User.verifyUserId({userId:followingUserId})
     } catch (error) {
         return res.send({
             status:400,
-            data:"Invalid following User Id",
+            message:"Trying to follow Unauthorized user",
             error:error
         })
     }
@@ -25,7 +24,7 @@ FollowRouter.post("/follow",async(req,res)=>{
     } catch (error) {
         return res.send({
             status:400,
-            data:"Invalid follower User Id",
+            message:"Only authorized user can proceed",
             error:error
         })
     }
@@ -33,75 +32,66 @@ FollowRouter.post("/follow",async(req,res)=>{
 try{
 
     const followDb = await follow({followingUserId,followerUserId})
-  
+
     return res.send({
         status:200,
         message:"Following",
-        data:followDb
+        data:followDb 
     })
 
 }
 catch(error){
+    console.log(error)
       return res.send({
         status:500,
-        message:"Database error",
-        error:error
+        message:error
     })
 }
  
 
 })
 
-//get following list of a particular user
-FollowRouter.get("/following",async(req,res)=>{
+FollowRouter.post("/following",async(req,res)=>{
 
-    const followerUserId = req.session.user.userId
+    const {userId} = req.body
     const SKIP = parseInt( req.query.skip) || 0
-
-
-    try{
-        const followingDb = await following({followerUserId,SKIP})
-
-        return res.send({
+    console.log('following:',req.body)
+     try{ 
+        const followingDb = await following({userId,SKIP}) 
+         return res.send({ 
             status:200,
             message:"Following list fetched successfully",
-            data:followingDb
+            data: followingDb
         })
-
     }
     catch(error){
         return res.send({
             status:500,
-            message:"Database error",
-            error:error
+            message:error  
         })
     }
-})
+})   
 
-FollowRouter.get("/followers",async(req,res)=>{
+FollowRouter.post("/follower",async(req,res)=>{    
 
-    const userId = req.session.user.userId
+    const {userId} = req.body
     const SKIP = parseInt(req.query.skip) || 0
-
+  
     try{
-        const followersDb = await followers({userId,SKIP})       
+        const followersDb = await followers({userId,SKIP})           
  
-        
-        // const followersUserIds = followersDb[0].data.map(follower=>(follower.followerUserId))
-
-
-        return res.send({
+         return res.send({
             status:200,
-            message:"Followers list fetched successfully",
-            data:followersDb
-        })
-
+            message:"Follower list fetched successfully",
+            data: followersDb 
+        }) 
+ 
     }
-    catch(error){
+    catch(error){   
         console.log(error)
         return res.send({
             status:500,
-            message:"Database error",
+            message:error, 
             error:error
         })
     }
@@ -112,13 +102,12 @@ FollowRouter.post("/unfollow",async(req,res)=>{
     const followingUserId = req.body.followingUserId
     const followerUserId = req.session.user.userId
 
-      //verify users Ids
     try {
         await User.verifyUserId({userId:followingUserId})
     } catch (error) {
         return res.send({
             status:400,
-            data:"Invalid following User Id",
+            message:"Trying to unfollow Unauthorized user",
             error:error
         })
     }
@@ -127,7 +116,7 @@ FollowRouter.post("/unfollow",async(req,res)=>{
     } catch (error) {
         return res.send({
             status:400,
-            data:"Invalid follower User Id",
+            message:"Only authorized user can proceed",
             error:error
         })
     }
@@ -143,7 +132,10 @@ FollowRouter.post("/unfollow",async(req,res)=>{
         })
     }
     catch(error){
-
+        return res.send({
+            status:500,
+            message: "Something went wrong, please try again",
+        })
     }
 })
 
