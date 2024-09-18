@@ -147,7 +147,7 @@ AuthRouter.post('/user/:userId',async(req,res)=>{
 
 AuthRouter.patch('/edit-profile/:username',async(req,res)=>{
   
-     const userId = req.session.user.userId
+     const userId = req.session.user?.userId
 
     const {name,username,profileImg, bio, niche} = req.body
  
@@ -170,10 +170,20 @@ AuthRouter.patch('/edit-profile/:username',async(req,res)=>{
 
         const updatedProfile = await User.editProfile({userId, name, username, email, password, bio, niche, profileImg});
          
+        console.log('profile update',updatedProfile)
          return res.send({
             status:200,
             message:'Profile updated!',
-            data:updatedProfile,
+            data: {
+                userId: updatedProfile._id,
+                name: updatedProfile.name,
+                username: updatedProfile.username,
+                 bio:updatedProfile.bio,
+                niche:updatedProfile.niche,
+                profileImg:updatedProfile.profileImg,
+                followingsCount:updatedProfile.followingsCount,
+                followersCount:updatedProfile.followersCount,
+                },
         })
         
       } catch (error) {

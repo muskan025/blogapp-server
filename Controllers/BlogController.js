@@ -180,7 +180,6 @@ try{
   return res.send({
     status: 200,
       message: "Blog edited successfully",
-      data:oldBlogDb
   })
 }
 catch(error){ 
